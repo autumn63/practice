@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 # --------------------------------------------------
-# 기본 유틸
+# 기본 유틸함수
 # --------------------------------------------------
 
 def _open_video(input_path):
@@ -33,7 +33,7 @@ def _make_writer(output_path, fps, width, height, is_color=True):
 
 
 # --------------------------------------------------
-# 1. 해상도 & FPS 통일
+# 해상도 & FPS 통일
 # --------------------------------------------------
 
 def resize_video(input_path, output_path, width=640, height=360):
@@ -90,7 +90,7 @@ def change_fps(input_path, output_path, target_fps=15):
 
 
 # --------------------------------------------------
-# 2. 구간 자르기 / 클립 나누기
+# 구간 자르기 / 클립 나누기
 # --------------------------------------------------
 
 def trim_video(input_path, output_path, start_sec, end_sec):
@@ -169,7 +169,7 @@ def split_video(input_path, segment_sec, output_dir):
 
 
 # --------------------------------------------------
-# 3. 프레임 추출 / 샘플링
+# 프레임 추출 / 샘플링
 # --------------------------------------------------
 
 def extract_frames(input_path, output_dir, every_n_frames=1):
@@ -227,7 +227,7 @@ def sample_frames(input_path, num_frames=16):
 
 
 # --------------------------------------------------
-# 4. 간단한 데이터 증강 (Flip / 밝기 조절)
+#좌우반전 (Flip)
 # --------------------------------------------------
 
 def horizontal_flip_video(input_path, output_path):
@@ -252,7 +252,9 @@ def horizontal_flip_video(input_path, output_path):
     cap.release()
     writer.release()
     print(f"[horizontal_flip_video] 저장 완료: {output_path}")
-
+# --------------------------------------------------
+#밝기 조절 (brightness adjustment)
+# --------------------------------------------------
 
 def adjust_brightness_video(input_path, output_path, factor=1.2):
     """
@@ -280,6 +282,227 @@ def adjust_brightness_video(input_path, output_path, factor=1.2):
     writer.release()
     print(f"[adjust_brightness_video] 저장 완료: {output_path}")
 
+# --------------------------------------------------
+# 영상 회전(rotate)
+# --------------------------------------------------
+def rotate_video(input_path, output_path, angle=90, scale=1.0):
+    """
+    영상을 주어진 각도(angle)만큼 회전한 새 영상 생성.
+    angle: 시계 반대 방향 회전 (도 단위)
+    """
+    cap = _open_video(input_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    center = (width / 2, height / 2)
+    M = cv2.getRotationMatrix2D(center, angle, scale)
+
+    writer = _make_writer(output_path, fps, width, height)
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        rotated = cv2.warpAffine(frame, M, (width, height))
+        writer.write(rotated)
+
+    cap.release()
+    writer.release()
+    print(f"[rotate_video] 저장 완료: {output_path}")
+#-------------------------------------------------
+# 크롭(crop)
+#--------------------------------------------------
+def crop_video(input_path, output_path, x, y, w, h):
+    """
+    영상에서 (x, y)을 기준으로 w*h만큼 잘라낸 새 영상 생성
+    """
+    cap = _open_video(input_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    if x < 0 or y < 0 or w <= 0 or h <= 0:
+        raise ValueError("크롭 영역(x, y, w, h)을 확인하세요.")
+    if x + w > width or y + h > height:
+        raise ValueError("크롭 영역이 원본 영상 범위를 벗어납니다.")
+
+    writer = _make_writer(output_path, fps, w, h)
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        cropped = frame[y:y+h, x:x+w]
+        writer.write(cropped)
+
+    cap.release()
+    writer.release()
+    print(f"[crop_video] 저장 완료: {output_path}")
+#------------------------------------------------
+#영상자막(text overlay)
+#-------------------------------------------------
+def add_text_overlay(
+    input_path,
+    output_path,
+    text="Sample Text",
+    position=(50, 50),
+    font=cv2.FONT_HERSHEY_SIMPLEX,
+    font_scale=1.0,
+    color=(0, 255, 0),
+    thickness=2,
+):
+    """
+    영상 위에 텍스트(자막)를 덮어 새 영상 생성
+    """
+    cap = _open_video(input_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    writer = _make_writer(output_path, fps, width, height)
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        img = frame.copy()
+        cv2.putText(
+            img, text, position,
+            font, font_scale, color, thickness,
+            lineType=cv2.LINE_AA
+        )
+        writer.write(img)
+
+    cap.release()
+    writer.release()
+    print(f"[add_text_overlay] 저장 완료: {output_path}")
+
+
+# --------------------------------------------------
+#영상 합치기 병합기능
+# --------------------------------------------------
+def concat_videos(video_list, output_path):
+    """
+    여러 영상을 순서대로 이어붙여 하나의 mp4로 병합
+    """
+    if not video_list:
+        raise ValueError("video_list가 비어 있습니다.")
+
+    # 기준(첫 번째 영상) 정보
+    first_cap = _open_video(video_list[0])
+    fps = first_cap.get(cv2.CAP_PROP_FPS)
+    width = int(first_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(first_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    first_cap.release()
+
+    writer = _make_writer(output_path, fps, width, height)
+
+    for path in video_list:
+        cap = _open_video(path)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            # 해상도 불일치 시 resize
+            if frame.shape[1] != width or frame.shape[0] != height:
+                frame = cv2.resize(frame, (width, height))
+
+            writer.write(frame)
+        cap.release()
+
+    writer.release()
+    print(f"[concat_videos] {len(video_list)}개 영상 병합 완료: {output_path}")
+
+#  --------------------------------------------------
+#진행 상황 표시 (progress bar) #pip install tqdm이 필요함
+# --------------------------------------------------
+
+#pip install tqdm
+
+try:
+    from tqdm import tqdm
+    _USE_TQDM = True
+except ImportError:
+    _USE_TQDM = False
+
+
+def _progress_iter(cap, total_frames=None, desc="Processing"):
+    """
+    cap.read() 루프에 tqdm 진행률을 입히는 generator.
+    tqdm이 없으면 그냥 (ret, frame)을 yield.
+    """
+    if total_frames is None or total_frames <= 0:
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    if _USE_TQDM:
+        pbar = tqdm(total=total_frames, desc=desc)
+    else:
+        pbar = None
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        yield ret, frame
+        if pbar is not None:
+            pbar.update(1)
+
+    if pbar is not None:
+        pbar.close()
+
+# --------------------------------------------------
+#FPS 변환 고급 버전 (프레임 보간, slow/fast motion)
+# --------------------------------------------------
+
+def change_fps(input_path, output_path, target_fps=15):
+    """
+    FPS 변경 (기본 형태: 원본 프레임을 일정 간격으로 샘플링)
+    """
+    cap = _open_video(input_path)
+    orig_fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    if orig_fps == 0:
+        raise ValueError("원본 FPS를 읽을 수 없습니다.")
+    if target_fps <= 0:
+        raise ValueError("target_fps는 0보다 커야 합니다.")
+
+    # 샘플링 간격
+    frame_interval = max(int(round(orig_fps / target_fps)), 1)
+
+    writer = _make_writer(output_path, target_fps, width, height, is_color=True)
+
+    frame_idx = 0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    if _USE_TQDM:
+        pbar = tqdm(total=total_frames, desc="Changing FPS")
+    else:
+        pbar = None
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # 일정 비율로 프레임만 선택
+        if frame_idx % frame_interval == 0:
+            writer.write(frame)
+
+        frame_idx += 1
+        if pbar is not None:
+            pbar.update(1)
+
+    if pbar is not None:
+        pbar.close()
+
+    cap.release()
+    writer.release()
+    print(f"[change_fps] 저장 완료: {output_path}")
 
 # --------------------------------------------------
 # 예시 실행용 (직접 돌려볼 때)
