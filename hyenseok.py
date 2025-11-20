@@ -534,3 +534,31 @@ if __name__ == "__main__":
 
     # 8. 밝게 만든 영상
     adjust_brightness_video(src, "out_bright.mp4", factor=1.3)
+
+    # 9. 영상 회전
+    rotate_video(src, "out_rotated.mp4", angle=90)
+
+    #10. 영상 크롭
+    crop_video(src, "out_cropped.mp4", x=100, y=50 , w=400, h=300)
+
+    #11. 영상에 자막 넣기
+    add_text_overlay(
+        src,
+        "out_text_overlay.mp4",
+        text="Hello, World!",
+        position=(100, 100),
+        font_scale=2.0,
+        color=(255, 0, 0),
+        thickness=3,
+    )
+
+    #12. 영상 병합
+    concat_videos(
+        [src, "out_resized.mp4", "out_15fps.mp4"],
+        "out_concatenated.mp4"
+    )
+
+    #13. FPS 변경 (진행 상황 표시)
+    change_fps(src, "out_10fps_progress.mp4", target_fps=10)
+
+# --------------------------------------------------
