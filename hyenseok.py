@@ -13,22 +13,26 @@ from pathlib import Path
 # --------------------------------------------------
 # 기본 유틸함수
 # --------------------------------------------------
+'''
+capture == cv2.VideoCapture 객체
+writer == cv2.VideoWriter 객체 
+fourcc == cv2.VideoWriter_fourcc 객체
+'''
+def _open_video(input_video):
+    capture = cv2.VideoCapture(str(input_video))
+    if not capture.isOpened():
+        raise FileNotFoundError(f"영상 파일을 열 수 없습니다: {input_video}")
+    return capture
 
-def _open_video(input_path):
-    cap = cv2.VideoCapture(str(input_path))
-    if not cap.isOpened():
-        raise FileNotFoundError(f"영상 파일을 열 수 없습니다: {input_path}")
-    return cap
 
-
-def _make_writer(output_path, fps, width, height, is_color=True):
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+def _make_writer(output_video, fps, width, height, is_color=True): #is_color가 True면 컬러 영상, False면 흑백 영상
+    output_video = Path(output_video)
+    output_video.parent.mkdir(parents=True, exist_ok=True)
 
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # .mp4 용
-    writer = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height), is_color)
+    writer = cv2.VideoWriter(str(output_video), fourcc, fps, (width, height), is_color)
     if not writer.isOpened():
-        raise RuntimeError(f"VideoWriter 생성 실패: {output_path}")
+        raise RuntimeError(f"VideoWriter 생성 실패: {output_video}")
     return writer
 
 
@@ -36,47 +40,47 @@ def _make_writer(output_path, fps, width, height, is_color=True):
 # 해상도 & FPS 통일
 # --------------------------------------------------
 
-def resize_video(input_path, output_path, width=640, height=360):
+def resize_video(input_video, output_video, width=640, height=360):
     """
     영상 해상도 변경 (fps는 원본 유지)
     """
-    cap = _open_video(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
+    capture = _open_video(input_video)
+    fps = capture.get(cv2.CAP_PROP_FPS)
 
-    writer = _make_writer(output_path, fps, width, height, is_color=True)
+    writer = _make_writer(output_video, fps, width, height, is_color=True)
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
 
         resized = cv2.resize(frame, (width, height))
         writer.write(resized)
 
-    cap.release()
+    capture.release()
     writer.release()
-    print(f"[resize_video] 저장 완료: {output_path}")
+    print(f"[resize_video] 저장 완료: {output_video}")
 
 
-def change_fps(input_path, output_path, target_fps=15):
+def change_fps(input_video, output_video, target_fps=15):
     """
     FPS 변경 (간단 버전: 일정 간격으로 프레임 샘플링)
     """
-    cap = _open_video(input_path)
-    orig_fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    capture = _open_video(input_video)
+    orig_fps = capture.get(cv2.CAP_PROP_FPS)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     if orig_fps == 0:
         raise ValueError("원본 FPS를 읽을 수 없습니다.")
 
     frame_interval = max(int(round(orig_fps / target_fps)), 1)
 
-    writer = _make_writer(output_path, target_fps, width, height, is_color=True)
+    writer = _make_writer(output_video, target_fps, width, height, is_color=True)
 
     frame_idx = 0
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
 
@@ -84,54 +88,54 @@ def change_fps(input_path, output_path, target_fps=15):
             writer.write(frame)
         frame_idx += 1
 
-    cap.release()
+    capture.release()
     writer.release()
-    print(f"[change_fps] 저장 완료: {output_path}")
+    print(f"[change_fps] 저장 완료: {output_video}")
 
 
 # --------------------------------------------------
 # 구간 자르기 / 클립 나누기
 # --------------------------------------------------
 
-def trim_video(input_path, output_path, start_sec, end_sec):
+def trim_video(input_video, output_video, start_sec, end_sec):
     """
     start_sec ~ end_sec 구간만 잘라서 새 영상으로 저장
     """
-    cap = _open_video(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    capture = _open_video(input_video)
+    fps = capture.get(cv2.CAP_PROP_FPS)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     start_frame = int(start_sec * fps)
     end_frame = int(end_sec * fps)
 
-    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+    capture.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
-    writer = _make_writer(output_path, fps, width, height, is_color=True)
+    writer = _make_writer(output_video, fps, width, height, is_color=True)
 
     current = start_frame
     while current <= end_frame:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
         writer.write(frame)
         current += 1
 
-    cap.release()
+    capture.release()
     writer.release()
-    print(f"[trim_video] 저장 완료: {output_path}")
+    print(f"[trim_video] 저장 완료: {output_video}")
 
 
-def split_video(input_path, segment_sec, output_dir):
+def split_video(input_video, segment_sec, output_dir):
     """
     영상 전체를 segment_sec(초) 단위로 연속 잘라서 여러 파일로 저장
     예: segment_sec=5 → 0~5초, 5~10초, ...
     """
-    cap = _open_video(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    capture = _open_video(input_video)
+    fps = capture.get(cv2.CAP_PROP_FPS)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
     total_sec = total_frames / fps
     num_segments = math.ceil(total_sec / segment_sec)
@@ -144,7 +148,7 @@ def split_video(input_path, segment_sec, output_dir):
     writer = None
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
 
@@ -164,7 +168,7 @@ def split_video(input_path, segment_sec, output_dir):
 
     if writer is not None:
         writer.release()
-    cap.release()
+    capture.release()
     print(f"[split_video] {num_segments}개 세그먼트로 분할 완료: {output_dir}")
 
 
@@ -172,12 +176,12 @@ def split_video(input_path, segment_sec, output_dir):
 # 프레임 추출 / 샘플링
 # --------------------------------------------------
 
-def extract_frames(input_path, output_dir, every_n_frames=1):
+def extract_frames(input_video, output_dir, every_n_frames=1):
     """
     every_n_frames마다 프레임를 이미지로 저장
     예: every_n_frames=30 → 30프레임마다 1장
     """
-    cap = _open_video(input_path)
+    capture = _open_video(input_video)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -185,7 +189,7 @@ def extract_frames(input_path, output_dir, every_n_frames=1):
     saved = 0
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
 
@@ -196,17 +200,17 @@ def extract_frames(input_path, output_dir, every_n_frames=1):
 
         frame_idx += 1
 
-    cap.release()
+    capture.release()
     print(f"[extract_frames] {saved}개 프레임 저장 완료: {output_dir}")
 
 
-def sample_frames(input_path, num_frames=16):
+def sample_frames(input_video, num_frames=16):
     """
     영상 전체에서 num_frames개 프레임을 균등 간격으로 샘플링해서
     numpy 배열(list)로 반환 (메모리 안에서만 사용)
     """
-    cap = _open_video(input_path)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    capture = _open_video(input_video)
+    total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
     if total_frames == 0:
         raise ValueError("영상 길이를 읽을 수 없습니다.")
 
@@ -214,13 +218,13 @@ def sample_frames(input_path, num_frames=16):
     frames = []
 
     for idx in indices:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-        ret, frame = cap.read()
+        capture.set(cv2.CAP_PROP_POS_FRAMES, idx)
+        ret, frame = capture.read()
         if not ret:
             continue
         frames.append(frame)
 
-    cap.release()
+    capture.release()
     frames = np.array(frames)  # shape: (num_frames, H, W, 3)
     print(f"[sample_frames] 샘플링된 프레임 shape: {frames.shape}")
     return frames
@@ -230,45 +234,45 @@ def sample_frames(input_path, num_frames=16):
 #좌우반전 (Flip)
 # --------------------------------------------------
 
-def horizontal_flip_video(input_path, output_path):
+def horizontal_flip_video(input_video, output_video):
     """
     영상을 좌우 반전한 새 영상 생성 (데이터 증강)
     """
-    cap = _open_video(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    capture = _open_video(input_video)
+    fps = capture.get(cv2.CAP_PROP_FPS)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    writer = _make_writer(output_path, fps, width, height)
+    writer = _make_writer(output_video, fps, width, height)
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
 
         flipped = cv2.flip(frame, 1)  # 1: 좌우 반전
         writer.write(flipped)
 
-    cap.release()
+    capture.release()
     writer.release()
-    print(f"[horizontal_flip_video] 저장 완료: {output_path}")
+    print(f"[horizontal_flip_video] 저장 완료: {output_video}")
 # --------------------------------------------------
 #밝기 조절 (brightness adjustment)
 # --------------------------------------------------
 
-def adjust_brightness_video(input_path, output_path, factor=1.2):
+def adjust_brightness_video(input_video, output_video, factor=1.2):
     """
     밝기 조절 (factor > 1 밝게, factor < 1 어둡게)
     """
-    cap = _open_video(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    capture = _open_video(input_video)
+    fps = capture.get(cv2.CAP_PROP_FPS)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    writer = _make_writer(output_path, fps, width, height)
+    writer = _make_writer(output_video, fps, width, height)
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
 
@@ -278,73 +282,73 @@ def adjust_brightness_video(input_path, output_path, factor=1.2):
 
         writer.write(img)
 
-    cap.release()
+    capture.release()
     writer.release()
-    print(f"[adjust_brightness_video] 저장 완료: {output_path}")
+    print(f"[adjust_brightness_video] 저장 완료: {output_video}")
 
 # --------------------------------------------------
 # 영상 회전(rotate)
 # --------------------------------------------------
-def rotate_video(input_path, output_path, angle=90, scale=1.0):
+def rotate_video(input_video, output_video, angle=90, scale=1.0):
     """
     영상을 주어진 각도(angle)만큼 회전한 새 영상 생성.
     angle: 시계 반대 방향 회전 (도 단위)
     """
-    cap = _open_video(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    capture = _open_video(input_video)
+    fps = capture.get(cv2.CAP_PROP_FPS)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     center = (width / 2, height / 2)
     M = cv2.getRotationMatrix2D(center, angle, scale)
 
-    writer = _make_writer(output_path, fps, width, height)
+    writer = _make_writer(output_video, fps, width, height)
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
         rotated = cv2.warpAffine(frame, M, (width, height))
         writer.write(rotated)
 
-    cap.release()
+    capture.release()
     writer.release()
-    print(f"[rotate_video] 저장 완료: {output_path}")
+    print(f"[rotate_video] 저장 완료: {output_video}")
 #-------------------------------------------------
 # 크롭(crop)
 #--------------------------------------------------
-def crop_video(input_path, output_path, x, y, w, h):
+def crop_video(input_video, output_video, x, y, w, h):
     """
     영상에서 (x, y)을 기준으로 w*h만큼 잘라낸 새 영상 생성
     """
-    cap = _open_video(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    capture = _open_video(input_video)
+    fps = capture.get(cv2.CAP_PROP_FPS)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     if x < 0 or y < 0 or w <= 0 or h <= 0:
         raise ValueError("크롭 영역(x, y, w, h)을 확인하세요.")
     if x + w > width or y + h > height:
         raise ValueError("크롭 영역이 원본 영상 범위를 벗어납니다.")
 
-    writer = _make_writer(output_path, fps, w, h)
+    writer = _make_writer(output_video, fps, w, h)
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
         cropped = frame[y:y+h, x:x+w]
         writer.write(cropped)
 
-    cap.release()
+    capture.release()
     writer.release()
-    print(f"[crop_video] 저장 완료: {output_path}")
+    print(f"[crop_video] 저장 완료: {output_video}")
 #------------------------------------------------
 #영상자막(text overlay)
 #-------------------------------------------------
 def add_text_overlay(
-    input_path,
-    output_path,
+    input_video,
+    output_video,
     text="Sample Text",
     position=(50, 50),
     font=cv2.FONT_HERSHEY_SIMPLEX,
@@ -355,15 +359,15 @@ def add_text_overlay(
     """
     영상 위에 텍스트(자막)를 덮어 새 영상 생성
     """
-    cap = _open_video(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    capture = _open_video(input_video)
+    fps = capture.get(cv2.CAP_PROP_FPS)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    writer = _make_writer(output_path, fps, width, height)
+    writer = _make_writer(output_video, fps, width, height)
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
 
@@ -375,15 +379,15 @@ def add_text_overlay(
         )
         writer.write(img)
 
-    cap.release()
+    capture.release()
     writer.release()
-    print(f"[add_text_overlay] 저장 완료: {output_path}")
+    print(f"[add_text_overlay] 저장 완료: {output_video}")
 
 
 # --------------------------------------------------
 #영상 합치기 병합기능
 # --------------------------------------------------
-def concat_videos(video_list, output_path):
+def concat_videos(video_list, output_video):
     """
     여러 영상을 순서대로 이어붙여 하나의 mp4로 병합
     """
@@ -397,12 +401,12 @@ def concat_videos(video_list, output_path):
     height = int(first_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     first_cap.release()
 
-    writer = _make_writer(output_path, fps, width, height)
+    writer = _make_writer(output_video, fps, width, height)
 
     for path in video_list:
-        cap = _open_video(path)
+        capture = _open_video(path)
         while True:
-            ret, frame = cap.read()
+            ret, frame = capture.read()
             if not ret:
                 break
 
@@ -411,10 +415,10 @@ def concat_videos(video_list, output_path):
                 frame = cv2.resize(frame, (width, height))
 
             writer.write(frame)
-        cap.release()
+        capture.release()
 
     writer.release()
-    print(f"[concat_videos] {len(video_list)}개 영상 병합 완료: {output_path}")
+    print(f"[concat_videos] {len(video_list)}개 영상 병합 완료: {output_video}")
 
 #  --------------------------------------------------
 #진행 상황 표시 (progress bar) #pip install tqdm이 필요함
@@ -429,13 +433,13 @@ except ImportError:
     _USE_TQDM = False
 
 
-def _progress_iter(cap, total_frames=None, desc="Processing"):
+def _progress_iter(capture, total_frames=None, desc="Processing"):
     """
-    cap.read() 루프에 tqdm 진행률을 입히는 generator.
+    capture.read() 루프에 tqdm 진행률을 입히는 generator.
     tqdm이 없으면 그냥 (ret, frame)을 yield.
     """
     if total_frames is None or total_frames <= 0:
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
     if _USE_TQDM:
         pbar = tqdm(total=total_frames, desc=desc)
@@ -443,7 +447,7 @@ def _progress_iter(cap, total_frames=None, desc="Processing"):
         pbar = None
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
         yield ret, frame
@@ -457,14 +461,14 @@ def _progress_iter(cap, total_frames=None, desc="Processing"):
 #FPS 변환 고급 버전 (프레임 보간, slow/fast motion)
 # --------------------------------------------------
 
-def change_fps(input_path, output_path, target_fps=15):
+def change_fps(input_video, output_video, target_fps=15):
     """
     FPS 변경 (기본 형태: 원본 프레임을 일정 간격으로 샘플링)
     """
-    cap = _open_video(input_path)
-    orig_fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    capture = _open_video(input_video)
+    orig_fps = capture.get(cv2.CAP_PROP_FPS)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     if orig_fps == 0:
         raise ValueError("원본 FPS를 읽을 수 없습니다.")
@@ -474,10 +478,10 @@ def change_fps(input_path, output_path, target_fps=15):
     # 샘플링 간격
     frame_interval = max(int(round(orig_fps / target_fps)), 1)
 
-    writer = _make_writer(output_path, target_fps, width, height, is_color=True)
+    writer = _make_writer(output_video, target_fps, width, height, is_color=True)
 
     frame_idx = 0
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
     if _USE_TQDM:
         pbar = tqdm(total=total_frames, desc="Changing FPS")
@@ -485,7 +489,7 @@ def change_fps(input_path, output_path, target_fps=15):
         pbar = None
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = capture.read()
         if not ret:
             break
 
@@ -500,9 +504,9 @@ def change_fps(input_path, output_path, target_fps=15):
     if pbar is not None:
         pbar.close()
 
-    cap.release()
+    capture.release()
     writer.release()
-    print(f"[change_fps] 저장 완료: {output_path}")
+    print(f"[change_fps] 저장 완료: {output_video}")
 
 # --------------------------------------------------
 # 예시 실행용 (직접 돌려볼 때)
