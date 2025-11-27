@@ -1,6 +1,6 @@
 #라이브러리 설치
 import numpy as np
-import librosa, librosa.display
+import librosa, librosa.display #!pip install --ignore-installed librosa 로 librosa 설치필요
 import matplotlib.pyplot as plt
 import soundfile as sf
 
