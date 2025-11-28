@@ -1,18 +1,23 @@
+from PIL import Image
+
+
 def to_gray(img):
-    """
-    이미지를 그레이스케일로 변환하는 함수.
-    TODO: PIL의 img.convert("L") 등을 이용해 실제 변환 로직 구현 필요.
-          필요하다면 다시 RGB로 변환하여 일관된 형태로 반환하도록 처리할 것.
-    """
-    pass
+    gray = img.convert("L")
+    return gray
+
+from PIL import Image
 
 def resize(img, width, height, keep_ratio=False):
-    """
-    이미지를 지정한 크기로 리사이즈하는 함수.
-    TODO: PIL.Image.resize()를 사용해 크기 조정 기능 구현 필요.
-          keep_ratio=True일 때는 가로세로 비율 유지하는 로직 추가 예정.
-    """
-    pass
+    if keep_ratio:
+        original_w, original_h = img.size
+        ratio = min(width / original_w, height / original_h)
+
+        new_w = int(original_w * ratio)
+        new_h = int(original_h * ratio)
+
+        return img.resize((new_w, new_h), Image.LANCZOS)
+
+    return img.resize((width, height), Image.LANCZOS)
 
 def normalize(img, method="0_1"):
     """
