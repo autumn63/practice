@@ -1,24 +1,26 @@
 def blur(img, ksize=3):
     """
     이미지를 블러(흐리게) 처리하는 함수.
-    TODO: PIL 또는 OpenCV의 블러/가우시안 블러 기능을 사용해
-          커널 크기(ksize)에 따라 서로 다른 정도의 블러를 적용하는 로직 구현 예정.
+    TODO: 복잡한 커널 설계 대신, Pillow에서 제공하는
+          ImageFilter.GaussianBlur(radius)를 그대로 사용하는 방향으로 구현 예정.
+          radius 값으로 흐림 정도만 조절하고, 커널 크기를 직접 다루지는 않음.
     """
     pass
 
 def sharpen(img):
     """
     이미지를 선명하게(샤프닝) 만드는 함수.
-    TODO: 샤프닝 커널(예: 엣지를 강조하는 컨볼루션 커널)을 적용해
-          이미지의 경계 부분을 더 또렷하게 만드는 로직 구현 예정.
+    TODO: 샤프닝 커널을 직접 설계하지 않고,
+          Pillow의 ImageFilter.SHARPEN 필터를 사용하는 단순한 방식으로 구현 예정.
     """
     pass
 
 def edge_detect(img, method="sobel"):
     """
-    이미지에서 엣지(윤곽선)를 검출하는 함수.
-    TODO: 'sobel', 'canny' 등 다양한 엣지 검출 방법을 지원하도록 확장 예정.
-          초기에는 가장 구현이 쉬운 방식부터 지원하고, 추후 옵션을 늘릴 계획.
+    이미지의 윤곽(엣지)을 강조하는 함수.
+    TODO: Sobel, Canny 같은 복잡한 알고리즘은 구현하지 않고,
+          Pillow의 ImageFilter.FIND_EDGES나 EDGE_ENHANCE 계열 필터를
+          활용하는 수준에서만 사용 예정.
     """
     pass
 
