@@ -1,5 +1,3 @@
-from PIL import Image
-
 
 def to_gray(img):
     gray = img.convert("L")
