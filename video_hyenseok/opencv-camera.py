@@ -1,4 +1,4 @@
-# python -m pip install opencv-python 필요.
+# python -m pip install opencv-python 필요..
 
 import cv2
 import numpy as np
