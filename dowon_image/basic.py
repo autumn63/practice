@@ -58,4 +58,4 @@ def center_crop(img, size):
           PIL의 img.crop(box) 사용해 잘라내기 로직 구현 예정.
     """
     pass
-
+#
