@@ -1,20 +1,15 @@
-#라이브러리 설치
-import cv2        # 동영상 및 이미지 처리
-import numpy as np
-import os
+# =================================================================
+# 1. 라이브러리 및 설정
+# =================================================================
+import cv2            # 동영상 및 이미지 처리를 위한 OpenCV 라이브러리
+import numpy as np    # 배열 처리를 위한 Numpy 라이브러리
+import os             # 파일 시스템 관리를 위한 OS 라이브러리
+import glob           # 파일 목록 검색을 위한 Glob 라이브러리
 
-# 프레임 추출 (동영상 -> 이미지 시퀀스)
-video_path = 'your_video.mp4'           #동영상 불러오기
-cap = cv2.VideoCapture(video_path)
-
-if not cap.isOpened():                  #열리지 않을 경우
-    print(f"Error: Could not open video file {video_path}")
-    exit()
-
-#영상 기본 정보 확인
-frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) # 전체 프레임 수
-fps = cap.get(cv2.CAP_PROP_FPS)                      # 초당 프레임 수
-width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))       # 프레임 너비
-height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))     # 프레임 높이
-
-print(f"Total Frames: {frame_count}, FPS: {fps}, Resolution: {width}x{height}") #영상 정보 출력
+# --- 사용자 설정 영역 ---
+INPUT_VIDEO_PATH = 'your_video.mp4'         # ⭐ 처리할 원본 동영상 파일 경로
+PROCESSED_DIR = 'processed_frames_bw_flipped' # 전처리된 프레임을 저장할 디렉토리명
+SEQUENCE_LENGTH = 30                        # 모델 입력으로 사용할 연속된 프레임의 개수
+TARGET_SIZE = (224, 224)                    # 전처리 후 프레임 크기 (높이, 너비)
+FRAME_INTERVAL = 5                          # 5 프레임마다 하나씩 추출 (샘플링)
+# -------------------------
