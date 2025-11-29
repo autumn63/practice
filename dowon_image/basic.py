@@ -28,26 +28,16 @@ def normalize(img, method="0_1"):
     pass
 
 def flip_horizontal(img):
-    """
-    이미지를 좌우로 뒤집는 함수.
-    TODO: PIL의 Image.FLIP_LEFT_RIGHT 등을 사용해 실제 뒤집기 로직 구현 예정.
-    """
-    pass
+    return img.transpose(Image.FLIP_LEFT_RIGHT)
+
 
 def flip_vertical(img):
-    """
-    이미지를 상하로 뒤집는 함수.
-    TODO: PIL의 Image.FLIP_TOP_BOTTOM 등을 사용해 뒤집기 로직 구현 필요.
-    """
-    pass
+    return img.transpose(Image.FLIP_TOP_BOTTOM)
+
 
 def rotate(img, angle, expand=True):
-    """
-    이미지를 지정한 각도(angle)만큼 회전시키는 함수.
-    TODO: PIL의 img.rotate(angle, expand=expand) 등을 이용해 회전 기능 구현 예정.
-          추후 90/180/270도 고정 회전도 별도 옵션으로 지원 가능.
-    """
-    pass
+    return img.rotate(angle, expand=expand)
+
 
 def center_crop(img, size):
     """
