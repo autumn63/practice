@@ -13,3 +13,24 @@ SEQUENCE_LENGTH = 30                        # 모델 입력으로 사용할 연�
 TARGET_SIZE = (224, 224)                    # 전처리 후 프레임 크기 (높이, 너비)
 FRAME_INTERVAL = 5                          # 5 프레임마다 하나씩 추출 (샘플링)
 # -------------------------
+
+# =================================================================
+# 2. 프레임 추출, 전처리 (흑백, 좌우반전) 및 저장
+# =================================================================
+
+# 2-1. 동영상 파일 열기
+cap = cv2.VideoCapture(INPUT_VIDEO_PATH)
+
+if not cap.isOpened():
+    print(f"Error: Could not open video file {INPUT_VIDEO_PATH}")
+    # 파일이 없거나 경로가 잘못되었을 경우 프로그램 종료
+    exit()
+
+# 2-2. 영상 기본 정보 확인 및 출력
+frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) # 전체 프레임 수
+fps = cap.get(cv2.CAP_PROP_FPS)                      # 초당 프레임 수
+width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))       # 프레임 너비
+height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))     # 프레임 높이
+
+print(f"--- 원본 영상 정보 ---")
+print(f"Total Frames: {frame_count}, FPS: {fps}, Resolution: {width}x{height}")
