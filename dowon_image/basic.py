@@ -1,34 +1,25 @@
+from PIL import Image
 
 def to_gray(img):
     gray = img.convert("L")
     return gray
 
-from PIL import Image
-
 def resize(img, width, height, keep_ratio=False):
     if keep_ratio:
-        original_w, original_h = img.size
-        ratio = min(width / original_w, height / original_h)
-
-        new_w = int(original_w * ratio)
-        new_h = int(original_h * ratio)
-
-        return img.resize((new_w, new_h), Image.LANCZOS)
-
+      
+      original_w, original_h = img.size
+      ratio = min(width / original_w, height / original_h)
+      
+      new_w = int(original_w * ratio)
+      new_h = int(original_h * ratio)
+        
+      return img.resize((new_w, new_h), Image.LANCZOS)
+      
+      
     return img.resize((width, height), Image.LANCZOS)
-
-def normalize(img, method="0_1"):
-    """
-    이미지 픽셀 값을 정규화하는 함수.
-    TODO: 다양한 정규화 방식 지원 예정:
-        - '0_1'      : [0,1] 범위로 스케일링
-        - '-1_1'     : [-1,1] 범위로 스케일링
-        - 'mean_std' : 평균/표준편차 기반 정규화
-    """
-    pass
-
+    
 def flip_horizontal(img):
-    return img.transpose(Image.FLIP_LEFT_RIGHT)
+    return img.transpose(Image.FLIP_LEFT_RIGHT) #
 
 
 def flip_vertical(img):
@@ -38,7 +29,6 @@ def flip_vertical(img):
 def rotate(img, angle, expand=True):
     return img.rotate(angle, expand=expand)
 
-
 def center_crop(img, size):
     """
     이미지를 중심 기준으로 정사각형(size x size) 크기로 잘라내는 함수.
@@ -46,4 +36,3 @@ def center_crop(img, size):
           PIL의 img.crop(box) 사용해 잘라내기 로직 구현 예정.
     """
     pass
-#
