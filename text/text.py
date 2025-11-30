@@ -113,3 +113,4 @@ if __name__ == "__main__":
         print("정제:", f.clean(s))
         print("욕 포함?:", f.has_profanity(s))
         print("-" * 30)
+
