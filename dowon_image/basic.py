@@ -30,9 +30,16 @@ def rotate(img, angle, expand=True):
     return img.rotate(angle, expand=expand)
 
 def center_crop(img, size):
-    """
-    이미지를 중심 기준으로 정사각형(size x size) 크기로 잘라내는 함수.
-    TODO: 이미지의 중앙 좌표를 계산하여 crop 영역 산출 후
-          PIL의 img.crop(box) 사용해 잘라내기 로직 구현 예정.
-    """
-    pass
+    w, h = img.size
+
+    center_x = w // 2
+    center_y = h // 2
+
+    half = size // 2
+    left   = center_x - half
+    upper  = center_y - half
+    right  = center_x + half
+    lower  = center_y + half
+
+    return img.crop((left, upper, right, lower))
+
