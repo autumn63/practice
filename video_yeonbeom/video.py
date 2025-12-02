@@ -39,3 +39,47 @@ height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))     # 프레임 높이
 
 print(f"--- 원본 영상 정보 ---")
 print(f"Total Frames: {frame_count}, FPS: {fps}, Resolution: {width}x{height}")
+
+# 2-3. 출력 디렉토리 생성
+os.makedirs(PROCESSED_DIR, exist_ok=True)
+print(f"전처리된 프레임은 '{PROCESSED_DIR}'에 저장됩니다.")
+
+frame_num = 0
+saved_count = 0
+
+print("--- 1단계: 프레임 추출 및 전처리 시작 ---")
+while cap.isOpened():
+    ret, frame = cap.read() # 프레임 읽기
+
+    if not ret:
+        break # 동영상 끝에 도달하면 루프 종료
+
+    # 지정된 간격으로 프레임 샘플링 (시간적 데이터 축소)
+    if frame_num % FRAME_INTERVAL == 0:
+        # 1. 크기 조정 (Resizing): 모든 프레임을 동일한 크기로 맞춤
+        resized_frame = cv2.resize(frame, TARGET_SIZE, interpolation=cv2.INTER_AREA)
+
+        # 2. 흑백 변환 (Grayscale): 채널 수를 3(컬러)에서 1(흑백)로 줄임
+        gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY) 
+
+        # 3. 좌우 반전 (Horizontal Flip): 데이터 증강 또는 특정 방향성 보정을 위해 사용
+        # flipCode=1은 좌우 반전을 의미
+        flipped_frame = cv2.flip(gray_frame, 1)
+
+        # 4. 0-1 정규화 (Normalization)
+        # 모델 학습을 위해 픽셀 값(0-255)을 0.0-1.0 범위로 변환
+        normalized_frame = flipped_frame.astype(np.float32) / 255.0
+
+        # --- 저장용: 0-255 범위로 다시 변환 (imwrite는 정수형 0-255 값을 요구) ---
+        frame_to_save = (normalized_frame * 255).astype(np.uint8)
+
+        # 5. 프레임 파일로 저장
+        frame_filename = os.path.join(PROCESSED_DIR, f'frame_{frame_num:06d}.jpg')
+        cv2.imwrite(frame_filename, frame_to_save)
+        
+        saved_count += 1
+
+    frame_num += 1
+
+cap.release()
+print(f"1단계 완료: 총 {frame_num} 프레임 중 {saved_count}개 프레임 저장됨.")
