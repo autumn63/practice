@@ -5,14 +5,28 @@ import mediapipe as mp
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
-#"C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/kakaoTalk_20251203_133325835.mp4"
+# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/KakaoTalk_20251203_133401812.mp4 41초 짜리
+# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/KakaoTalk_20251203_112758823.mp4 34초 짜리
+#"C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/kakaoTalk_20251203_133325835.mp4 49초 짜리"
 cap = cv2.VideoCapture(
     "C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/kakaoTalk_20251203_133325835.mp4"
 )
 
+# fourcc 인코딩 방식 설정. MP4V로 설정.
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+#동영상 파일 생성. 폴더 위치 설정.
+out = cv2.VideoWriter("C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/output_blur.mp4",
+    fourcc,
+    cap.get(cv2.CAP_PROP_FPS), #원본 FPS 유지
+    (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), #원본 해상도 유지
+     int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) #원본 해상도 유지
+)
+
+#"C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/kakaoTalk_20251203_133325835.mp4"
+
 with mp_face_detection.FaceDetection(
     model_selection=1,  # 0: 가까운 거리(2m 이내) , 1: 먼 거리(2m 이상)
-    min_detection_confidence=0.2  # 최소 얼굴 감지 신뢰도. 낮을수록 애매한 것도 잘 잡음.
+    min_detection_confidence=0.1  # 최소 얼굴 감지 신뢰도. 낮을수록 애매한 것도 잘 잡음.
 ) as face_detection:
 
     while cap.isOpened():
@@ -27,17 +41,13 @@ with mp_face_detection.FaceDetection(
         image = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)  # 영상의 대비와 밝기 조절
         # image = cv2.flip(image,1)  # 좌우 반전이 필요하면 사용
 
-        # 보기 편하기 위해 이미지를 좌우 반전하고, BGR 이미지를 RGB로 변환
-        image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
+        h, w, _ = image.shape #원본 프레임 사이즈
 
-        # True: 이미지 수정가능. False: 이미지 수정불가능. 성능 최적화.
-        image.flags.writeable = False
-        results = face_detection.process(image)
-        image.flags.writeable = True
-
-        # 다시 BGR 로 되돌리기 (화면에 띄우기/블러용)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        h, w, _ = image.shape
+        # --- Mediapipe용 RGB (원본 image는 그대로 BGR 유지) ---
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image_rgb.flags.writeable = False
+        results = face_detection.process(image_rgb)
+        image_rgb.flags.writeable = True
 
         detections = []  # 감지된 얼굴 박스 좌표를 저장할 리스트
         if results.detections:
@@ -63,7 +73,7 @@ with mp_face_detection.FaceDetection(
                 #x1,y2-----------x2,y2
                 
 
-                pad = 0.1  # 10% 박스 크기 확장.
+                pad = 0.15  # 15% 박스 크기 확장.
                 dx = int((x2 - x1) * pad)  # 박스 가로길이 기준 확장량
                 dy = int((y2 - y1) * pad)  # 박스 세로길이 기준 확장량
 
@@ -96,6 +106,10 @@ with mp_face_detection.FaceDetection(
         #     for detection in results.detections:
         #         mp_drawing.draw_detection(image, detection)
 
+        #---- 저장 ----
+        out.write(image)
+
+        #---- 화면 표시 ----
         cv2.imshow('MediaPipe Face Detection + Blur', image)
         if cv2.waitKey(5) & 0xFF == 27:  # esc 키를 누르면 종료.
             break
