@@ -83,3 +83,64 @@ while cap.isOpened():
 
 cap.release()
 print(f"1단계 완료: 총 {frame_num} 프레임 중 {saved_count}개 프레임 저장됨.")
+
+# =================================================================
+# 3. 저장된 프레임들을 시퀀스 데이터셋으로 구성 및 저장
+# =================================================================
+
+def create_sequences(frame_directory, sequence_length):
+    """
+    저장된 개별 흑백 프레임들을 불러와 시퀀스 배열(Numpy)로 구성
+    """
+    frame_files = sorted(glob.glob(os.path.join(frame_directory, '*.jpg')))
+    
+    if len(frame_files) < sequence_length:
+        print("경고: 시퀀스 구성에 필요한 프레임 수가 부족합니다.")
+        return np.array([])
+
+    all_frames = []
+    
+    # 3-1. 저장된 모든 프레임 불러오기
+    for file_path in frame_files:
+        frame = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 읽음
+        
+        # 0-1 범위로 재변환
+        frame = frame.astype(np.float32) / 255.0
+        
+        # 형태를 (높이, 너비) -> (높이, 너비, 1)로 변환 (채널 차원 추가)
+        frame = np.expand_dims(frame, axis=-1)
+        
+        all_frames.append(frame)
+
+    all_frames = np.array(all_frames)
+
+    # 3-2. 시퀀스 생성 (오버랩 없음)
+    sequences = []
+    num_sequences = len(all_frames) // sequence_length
+    
+    for i in range(num_sequences):
+        start_idx = i * sequence_length
+        end_idx = start_idx + sequence_length
+        
+        sequence = all_frames[start_idx:end_idx]
+        sequences.append(sequence)
+
+    return np.array(sequences)
+
+print("--- 2단계: 시퀀스 데이터셋 구성 및 저장 시작 ---")
+
+# 시퀀스 데이터셋 생성
+video_dataset = create_sequences(
+    frame_directory=PROCESSED_DIR,
+    sequence_length=SEQUENCE_LENGTH
+)
+
+# 결과 확인 및 저장
+if video_dataset.size > 0:
+    print("\n--- 💾 최종 데이터셋 구성 완료 ---")
+    # 최종 배열 형태: (시퀀스 개수, 시퀀스 길이, 높이, 너비, 채널)
+    print(f"데이터셋 형태 (Shape): {video_dataset.shape}")
+    
+    output_filename = 'video_dataset_final.npy'
+    np.save(output_filename, video_dataset)
+    print(f"최종 데이터셋이 '{output_filename}' 파일로 저장되었습니다.")
