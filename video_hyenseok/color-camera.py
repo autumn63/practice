@@ -7,6 +7,7 @@ pip install opencv-python numpy matplotlib
 #터미널 입력 cd video_hyenseok , python opencv-camera.py
 
 # 카메라로 영상 읽고, 원본 영상, 흑백 영상 둘다 출력. 원본 영상만 저장.
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
