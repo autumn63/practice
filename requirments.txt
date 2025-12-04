@@ -1,3 +1,4 @@
 soundfile
 matplotlib.pyplot
 ibrosa, librosa.display
+moviepy
