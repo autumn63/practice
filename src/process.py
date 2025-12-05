@@ -2,36 +2,29 @@ import librosa
 import numpy as np
 
 def wav_del_space(y, sr):
-    """
-    오디오 데이터(y)와 샘플링레이트(sr)를 받아서
-    무음 구간을 제거한 '의미 있는 소리 조각들의 리스트'를 반환.
-    """
-    
-    # 반환할 리스트 초기화
-    segments_list = []
+    print(f"--- Audio Analysis Start (Total Samples: {len(y)}) ---")
+
+    # 1. 예외 처리: 데이터가 비어있으면 종료
+    if len(y) == 0: return []
+
+    # 2. 정규화 (필수): 소리 크기를 0~1 사이로 맞춤
     y = librosa.util.normalize(y)
 
-    # 무음 구간 기준으로 나누기
-    # top_db=25: 잡음이 좀 섞여 있어 기준 데시벨 25로 잡음
-    # frame_length, hop_length: 값을 넣어야 너무 자잘하게 끊기는 걸 방지함
-    intervals = librosa.effects.split(y, top_db=25, frame_length=2048, hop_length=512)
-    
-    # 구간별로 잘라서 리스트에 담기
-    for start, end in intervals:
-        
-        # 현재 구간의 길이(end - start)가 0.3초보다 짧으면 무시 (잡음 제거)
-        if (end - start) < sr * 0.1:
-            continue
-        
-        # 실제 데이터 자르기
-        chunk = y[start:end]
-        
-        # 잘라낸 조각이 너무 짧으면 (0.1초 미만) 무시
-        if len(chunk) < 2048: 
-            continue
-            
-        # 살아남은 조각을 리스트에 추가
-        segments_list.append(chunk)
+    # 3. 공백 제거 (top_db=20 고정)
+    # 20dB: 잡음과 말소리를 구분하는 기준. 낮을수록 엄격하게 자름.
+    intervals = librosa.effects.split(
+        y, 
+        top_db=20,          # 요청하신 고정값
+        frame_length=1024, 
+        hop_length=256
+    )
 
-    # 결과 반환 (main.py가 이걸 받아서 저장함)
+    segments_list = []
+
+    # 4. 구간 필터링 및 저장
+    for start, end in intervals:
+        # 0.1초(노이즈)보다 긴 구간만 유효한 데이터로 인정
+        if (end - start) > sr * 0.1:
+            segments_list.append(y[start:end])
+
     return segments_list
