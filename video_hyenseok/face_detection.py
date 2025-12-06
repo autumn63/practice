@@ -1,3 +1,6 @@
+#cd video_hyenseok 
+#python face_detection.py
+
 # pip install mediapipe opencv-python 필요.
 import cv2
 import mediapipe as mp
@@ -5,11 +8,11 @@ import mediapipe as mp
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
-# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/KakaoTalk_20251203_133401812.mp4 41초 짜리
-# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/KakaoTalk_20251203_112758823.mp4 34초 짜리
-#"C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/kakaoTalk_20251203_133325835.mp4 49초 짜리"
+# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/41초.mp4"
+# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/34초.mp4"
+#"C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/49초.mp4"  
 cap = cv2.VideoCapture(
-    "C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/kakaoTalk_20251203_133325835.mp4"
+    "C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/49초.mp4"
 )
 
 # fourcc 인코딩 방식 설정. MP4V로 설정.
@@ -39,7 +42,6 @@ with mp_face_detection.FaceDetection(
         alpha = 1.0  # 대비 조절 (1.0-3.0)
         beta = 0     # 밝기 조절 (0-100)
         image = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)  # 영상의 대비와 밝기 조절
-        # image = cv2.flip(image,1)  # 좌우 반전이 필요하면 사용
 
         h, w, _ = image.shape #원본 프레임 사이즈
 
@@ -68,7 +70,7 @@ with mp_face_detection.FaceDetection(
                 #x1,y1-----------x2,y1
                 #  |                 |
                 #  |                 |
-                #  |                 |
+                #  |      얼굴       |
                 #  |                 |
                 #x1,y2-----------x2,y2
                 
