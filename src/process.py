@@ -1,30 +1,38 @@
 import librosa
-import numpy as np
+import librosa.display
+import matplotlib.pyplot as plt
 
 def wav_del_space(y, sr):
-    print(f"--- Audio Analysis Start (Total Samples: {len(y)}) ---")
+    # 데이터 유효성 검사
+    if len(y) == 0: 
+        return []
 
-    # 1. 예외 처리: 데이터가 비어있으면 종료
-    if len(y) == 0: return []
-
-    # 2. 정규화 (필수): 소리 크기를 0~1 사이로 맞춤
+    # 정규화
     y = librosa.util.normalize(y)
 
-    # 3. 공백 제거 (top_db=20 고정)
-    # 20dB: 잡음과 말소리를 구분하는 기준. 낮을수록 엄격하게 자름.
+    # 무음 구간 감지 (top_db 조절로 민감도 설정 가능)
     intervals = librosa.effects.split(
         y, 
-        top_db=20,          # 요청하신 고정값
+        top_db=20,         
         frame_length=1024, 
         hop_length=256
     )
-
+ 
     segments_list = []
 
-    # 4. 구간 필터링 및 저장
+    # 0.1초 미만의 노이즈 구간 제외하고 리스트에 추가
     for start, end in intervals:
-        # 0.1초(노이즈)보다 긴 구간만 유효한 데이터로 인정
         if (end - start) > sr * 0.1:
             segments_list.append(y[start:end])
 
     return segments_list
+
+def show_wav(y, sr):
+    plt.figure(figsize=(15, 10))
+    librosa.display.waveshow(y, sr=sr)
+    plt.title("Waveform")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Amplitude")
+    
+    # plt 객체를 반환하여 main에서 저장하도록 함
+    return plt
