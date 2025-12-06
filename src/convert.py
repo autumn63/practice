@@ -3,31 +3,31 @@ from moviepy import VideoFileClip
 
 def convert(filename):
     # 경로 설정
-    base_dir = "data"  # 영상이 있는 폴더
+    base_dir = "data"
+    input_dir = os.path.join(base_dir, "input")
     output_dir = os.path.join(base_dir, "output")
     
-    # 폴더가 없으면 생성
     if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
-    video_path = os.path.join(base_dir + '/input', filename)
+    video_path = os.path.join(input_dir, filename)
     audio_filename = os.path.splitext(filename)[0] + ".wav"
     output_path = os.path.join(output_dir, audio_filename)
 
-    print(f"Converting: {video_path} -> {output_path}")
-
-    # 변환 작업
     try:
+        # 비디오 로드 및 오디오 추출
         video = VideoFileClip(video_path)
-        # 오디오가 있는지 확인
+        
         if video.audio is None:
-            print("Error: 이 비디오 파일에는 오디오 트랙이 없습니다!")
+            print("Error: 오디오 트랙이 없는 비디오입니다.")
             return None
             
-        video.audio.write_audiofile(output_path, codec='pcm_s16le') # wav 포맷
+        # 오디오 저장 (로그 출력 최소화)
+        video.audio.write_audiofile(output_path, codec='pcm_s16le', logger=None)
         video.close()
+        
         return output_path
         
     except Exception as e:
-        print(f"Conversion Failed: {e}")
+        print(f"변환 실패: {e}")
         return None
