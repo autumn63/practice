@@ -1,88 +1,92 @@
 # =================================================================
-# 1. 라이브러리 및 설정
+# 1. 라이브러리 설치 및 설정
 # =================================================================
 
-# 필요한 라이브러리 설치 (터미널/명령 프롬프트에 입력해주세요)
-# pip install opencv-python
-# pip install numpy
+# 필요한 라이브러리 설치
+# pip install opencv-python numpy
 
-import cv2            # 동영상 및 이미지 처리를 위한 OpenCV 라이브러리
-import numpy as np    # 배열 처리를 위한 Numpy 라이브러리
-import os             # 파일 시스템 관리를 위한 OS 라이브러리
-import glob           # 파일 목록 검색을 위한 Glob 라이브러리
+import cv2
+import numpy as np
+import os
+import glob
+import math # math.gcd 함수를 사용하여 비율을 계산할 때 사용 가능 (선택 사항)
 
 # --- 사용자 설정 영역 ---
-INPUT_VIDEO_PATH = 'video_yeonbeom.mp4'         # ⭐ 처리할 원본 동영상 파일 경로
-PROCESSED_DIR = 'processed_frames_bw_flipped' # 전처리된 프레임을 저장할 디렉토리명
+INPUT_VIDEO_PATH = 'video.mp4'         # 처리할 원본 동영상 파일 경로
+PROCESSED_DIR = 'standardized_frames_16x9'    # 표준화된 프레임을 저장할 디렉토리명
+TARGET_ASPECT_RATIO = (16, 9)                   # 목표 비율
+TARGET_SIZE = (320, 180)                        # 16:9 비율을 유지하는 크기 (320 / 16 = 20, 180 / 9 = 20)
 SEQUENCE_LENGTH = 30                        # 모델 입력으로 사용할 연속된 프레임의 개수
-TARGET_SIZE = (224, 224)                    # 전처리 후 프레임 크기 (높이, 너비)
 FRAME_INTERVAL = 5                          # 5 프레임마다 하나씩 추출 (샘플링)
+# --- 표준화 설정 ---
+CLIP_LIMIT = 2.0                            # CLAHE 대비 제한 값 
+TILE_GRID_SIZE = (8, 8)                     # CLAHE 처리 영역 크기
 # -------------------------
 
+
 # =================================================================
-# 2. 프레임 추출, 전처리 (흑백, 좌우반전) 및 저장
+# 2. 영상 표준화, 프레임 추출, 저장
 # =================================================================
 
-# 2-1. 동영상 파일 열기
-cap = cv2.VideoCapture(INPUT_VIDEO_PATH)
+def standardize_and_extract_frames(video_path, output_dir, target_size, interval, clip_limit, tile_grid_size):
+    """
+    동영상을 읽어 해상도(16:9), 밝기/대비, 색감 표준화하여 프레임을 저장
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print(f"Error: Could not open video file {video_path}")
+        return 0
 
-if not cap.isOpened():
-    print(f"Error: Could not open video file {INPUT_VIDEO_PATH}")
-    # 파일이 없거나 경로가 잘못되었을 경우 프로그램 종료
-    exit()
+    os.makedirs(output_dir, exist_ok=True)
+    frame_num = 0
+    saved_count = 0
+    
+    # CLAHE 객체 생성 (밝기/대비 균일화 도구)
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
 
-# 2-2. 영상 기본 정보 확인 및 출력
-frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) # 전체 프레임 수
-fps = cap.get(cv2.CAP_PROP_FPS)                      # 초당 프레임 수
-width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))       # 프레임 너비
-height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))     # 프레임 높이
+    print("--- 1단계: 영상 표준화 및 프레임 추출 시작 (16:9 비율 적용) ---")
 
-print(f"--- 원본 영상 정보 ---")
-print(f"Total Frames: {frame_count}, FPS: {fps}, Resolution: {width}x{height}")
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret: break
 
-# 2-3. 출력 디렉토리 생성
-os.makedirs(PROCESSED_DIR, exist_ok=True)
-print(f"전처리된 프레임은 '{PROCESSED_DIR}'에 저장됩니다.")
+        if frame_num % interval == 0:
+            
+            # 1. 해상도 맞추기 (크기 조정 Resizing)
+            # 프레임을 TARGET_SIZE (320x180)으로 조정합니다.
+            resized_frame = cv2.resize(frame, target_size, interpolation=cv2.INTER_AREA)
 
-frame_num = 0
-saved_count = 0
+            # 2. 밝기 및 대비 균일화 (CLAHE 적용)
+            # 2-1. BGR->LAB 변환 (밝기(L) 채널 분리)
+            lab = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            
+            # 2-2. L 채널에 CLAHE 적용
+            cl = clahe.apply(l)
+            
+            # 2-3. L 채널을 다시 합치고 LAB->BGR로 복원
+            limg = cv2.merge((cl, a, b))
+            contrast_enhanced_frame = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
 
-print("--- 1단계: 프레임 추출 및 전처리 시작 ---")
-while cap.isOpened():
-    ret, frame = cap.read() # 프레임 읽기
+            # 3. 색감 정규화 (Normalization)
+            # 모든 픽셀 값을 0.0-1.0 범위로 변환합니다.
+            normalized_frame = contrast_enhanced_frame.astype(np.float32) / 255.0
 
-    if not ret:
-        break # 동영상 끝에 도달하면 루프 종료
+            # --- 저장용: 0-255 범위로 다시 변환 ---
+            frame_to_save = (normalized_frame * 255).astype(np.uint8)
 
-    # 지정된 간격으로 프레임 샘플링 (시간적 데이터 축소)
-    if frame_num % FRAME_INTERVAL == 0:
-        # 1. 크기 조정 (Resizing): 모든 프레임을 동일한 크기로 맞춤
-        resized_frame = cv2.resize(frame, TARGET_SIZE, interpolation=cv2.INTER_AREA)
+            # 4. 프레임 파일로 저장
+            frame_filename = os.path.join(output_dir, f'frame_{frame_num:06d}.jpg')
+            cv2.imwrite(frame_filename, frame_to_save)
+            
+            saved_count += 1
+            
+        frame_num += 1
 
-        # 2. 흑백 변환 (Grayscale): 채널 수를 3(컬러)에서 1(흑백)로 줄임
-        gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY) 
+    cap.release()
+    print(f"1단계 완료: 총 {frame_num} 프레임 중 {saved_count}개 표준화된 프레임이 저장됨.")
+    return saved_count
 
-        # 3. 좌우 반전 (Horizontal Flip): 데이터 증강 또는 특정 방향성 보정을 위해 사용
-        # flipCode=1은 좌우 반전을 의미
-        flipped_frame = cv2.flip(gray_frame, 1)
-
-        # 4. 0-1 정규화 (Normalization)
-        # 모델 학습을 위해 픽셀 값(0-255)을 0.0-1.0 범위로 변환
-        normalized_frame = flipped_frame.astype(np.float32) / 255.0
-
-        # --- 저장용: 0-255 범위로 다시 변환 (imwrite는 정수형 0-255 값을 요구) ---
-        frame_to_save = (normalized_frame * 255).astype(np.uint8)
-
-        # 5. 프레임 파일로 저장
-        frame_filename = os.path.join(PROCESSED_DIR, f'frame_{frame_num:06d}.jpg')
-        cv2.imwrite(frame_filename, frame_to_save)
-        
-        saved_count += 1
-
-    frame_num += 1
-
-cap.release()
-print(f"1단계 완료: 총 {frame_num} 프레임 중 {saved_count}개 프레임 저장됨.")
 
 # =================================================================
 # 3. 저장된 프레임들을 시퀀스 데이터셋으로 구성 및 저장
@@ -90,7 +94,7 @@ print(f"1단계 완료: 총 {frame_num} 프레임 중 {saved_count}개 프레임
 
 def create_sequences(frame_directory, sequence_length):
     """
-    저장된 개별 흑백 프레임들을 불러와 시퀀스 배열(Numpy)로 구성
+    저장된 개별 프레임들을 불러와 시퀀스 배열(Numpy)로 구성
     """
     frame_files = sorted(glob.glob(os.path.join(frame_directory, '*.jpg')))
     
@@ -102,13 +106,11 @@ def create_sequences(frame_directory, sequence_length):
     
     # 3-1. 저장된 모든 프레임 불러오기
     for file_path in frame_files:
-        frame = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 읽음
+        # BGR(컬러) 이미지로 읽음
+        frame = cv2.imread(file_path, cv2.IMREAD_COLOR) 
         
-        # 0-1 범위로 재변환
+        # 0-1 범위로 재변환 (저장된 파일이 0-255였기 때문에)
         frame = frame.astype(np.float32) / 255.0
-        
-        # 형태를 (높이, 너비) -> (높이, 너비, 1)로 변환 (채널 차원 추가)
-        frame = np.expand_dims(frame, axis=-1)
         
         all_frames.append(frame)
 
@@ -127,20 +129,36 @@ def create_sequences(frame_directory, sequence_length):
 
     return np.array(sequences)
 
-print("--- 2단계: 시퀀스 데이터셋 구성 및 저장 시작 ---")
 
-# 시퀀스 데이터셋 생성
-video_dataset = create_sequences(
-    frame_directory=PROCESSED_DIR,
-    sequence_length=SEQUENCE_LENGTH
+# =================================================================
+# 4. 전체 실행 로직
+# =================================================================
+
+# 1단계 실행
+saved_frames_count = standardize_and_extract_frames(
+    INPUT_VIDEO_PATH,
+    PROCESSED_DIR,
+    TARGET_SIZE,
+    FRAME_INTERVAL,
+    CLIP_LIMIT,
+    TILE_GRID_SIZE
 )
 
-# 결과 확인 및 저장
-if video_dataset.size > 0:
-    print("\n--- 💾 최종 데이터셋 구성 완료 ---")
-    # 최종 배열 형태: (시퀀스 개수, 시퀀스 길이, 높이, 너비, 채널)
-    print(f"데이터셋 형태 (Shape): {video_dataset.shape}")
-    
-    output_filename = 'video_dataset_final.npy'
-    np.save(output_filename, video_dataset)
-    print(f"최종 데이터셋이 '{output_filename}' 파일로 저장되었습니다.")
+if saved_frames_count > 0:
+    print("--- 2단계: 시퀀스 데이터셋 구성 및 저장 시작 ---")
+
+    # 2단계 실행
+    video_dataset = create_sequences(
+        frame_directory=PROCESSED_DIR,
+        sequence_length=SEQUENCE_LENGTH
+    )
+
+    # 결과 확인 및 저장
+    if video_dataset.size > 0:
+        print("\n--- 💾 최종 데이터셋 구성 완료 ---")
+        # 최종 배열 형태: (시퀀스 개수, 시퀀스 길이, 높이, 너비, 채널)
+        print(f"데이터셋 형태 (Shape): {video_dataset.shape}")
+        
+        output_filename = 'video_dataset_16x9.npy'
+        np.save(output_filename, video_dataset)
+        print(f"최종 데이터셋이 '{output_filename}' 파일로 저장되었습니다.")
