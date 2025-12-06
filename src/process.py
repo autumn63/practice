@@ -1,44 +1,30 @@
-import matplotlib.pyplot as plt
-import librosa, librosa.display
+import librosa
+import numpy as np
 
-
-# Draw WavePlot
-def draw_waveplot(y, sr):
-    plt.figure(figsize=(15, 10)) 
-    librosa.display.waveshow(y, sr=sr, alpha=0.5)
-
-    plt.xlabel("Time (s)")
-    plt.ylabel("Amplitude")
-    plt.title("Waveform")
-    plt.savefig("src/waveplot.png")  # 웨이브플롯 이미지 저장
-    plt.show()
-
-# Draw Spectrogram
-def draw_spectrogram(y, sr):
-    X = librosa.stft(y)  # 데이타의 스펙트로그램 리턴 
-    # shift : 음성을 시간기반 to 주파수 기반으로 변환.
-
-    db = librosa.amplitude_to_db(abs(X))  # 스펙트로그램을 데시벨로 변환
-
-    plt.figure(figsize=(15, 10))
-    librosa.display.specshow(db, sr=sr, x_axis='time', y_axis='hz')
-    plt.colorbar(format='%+2.0f dB')
-    plt.title('Spectrogram')
-    plt.savefig("src/spectrogram.png")  # 스펙트로그램 이미지 저장
-    plt.show()
-
-
-# wav 파일 Edit(공백제거 --> 무음 구간 기준으로 나누기)
 def wav_del_space(y, sr):
+    print(f"--- Audio Analysis Start (Total Samples: {len(y)}) ---")
 
-    segment = []
-    intervals = librosa.effects.split(y, top_db=30) # intervals : 무음이 아닌 구간의 시작과 끝 인덱스 반환
+    # 1. 예외 처리: 데이터가 비어있으면 종료
+    if len(y) == 0: return []
 
-    for i, (start, end) in enumerate(intervals):
-        # 간격이 너무 짧은 구간은 무시
-        if len(segment) < sr * 0.5:
-            continue
+    # 2. 정규화 (필수): 소리 크기를 0~1 사이로 맞춤
+    y = librosa.util.normalize(y)
 
-        segment.append(y[start:end]) # 무음이 아닌 구간을 segment 리스트에 추가
+    # 3. 공백 제거 (top_db=20 고정)
+    # 20dB: 잡음과 말소리를 구분하는 기준. 낮을수록 엄격하게 자름.
+    intervals = librosa.effects.split(
+        y, 
+        top_db=20,          # 요청하신 고정값
+        frame_length=1024, 
+        hop_length=256
+    )
 
-    return segment
+    segments_list = []
+
+    # 4. 구간 필터링 및 저장
+    for start, end in intervals:
+        # 0.1초(노이즈)보다 긴 구간만 유효한 데이터로 인정
+        if (end - start) > sr * 0.1:
+            segments_list.append(y[start:end])
+
+    return segments_list
