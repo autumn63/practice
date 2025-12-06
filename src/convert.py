@@ -1,21 +1,33 @@
 import os
 from moviepy import VideoFileClip
 
-def convert(video_name):
+def convert(filename):
+    # 경로 설정
+    base_dir = "data"  # 영상이 있는 폴더
+    output_dir = os.path.join(base_dir, "output")
+    
+    # 폴더가 없으면 생성
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    video_path = os.path.join(base_dir + '/input', filename)
+    audio_filename = os.path.splitext(filename)[0] + ".wav"
+    output_path = os.path.join(output_dir, audio_filename)
+
+    print(f"Converting: {video_path} -> {output_path}")
+
+    # 변환 작업
     try:
-        video_path = os.path.join("data", "input", video_name)
-        
-        filename_without_ext = os.path.splitext(video_name)[0]
-        audio_path = os.path.join("data", "output", filename_without_ext + ".wav")
-
-        # 출력 폴더 확인
-        os.makedirs(os.path.dirname(audio_path), exist_ok=True)
-
-        # 비디오 로드 및 오디오 추출 
-        with VideoFileClip(video_path) as clip:
-            clip.audio.write_audiofile(audio_path,codec='pcm_s16le', logger=None)
+        video = VideoFileClip(video_path)
+        # 오디오가 있는지 확인
+        if video.audio is None:
+            print("Error: 이 비디오 파일에는 오디오 트랙이 없습니다!")
+            return None
             
-        return audio_path
+        video.audio.write_audiofile(output_path, codec='pcm_s16le') # wav 포맷
+        video.close()
+        return output_path
         
-    except Exception:
-        return -1
+    except Exception as e:
+        print(f"Conversion Failed: {e}")
+        return None

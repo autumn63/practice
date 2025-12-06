@@ -1,50 +1,46 @@
 import os
-import numpy as np  # [필수] 배열 합치기 위해 필요
-import file, process, convert
+import numpy as np
+import file, process
 
 def main():
-    # 파일 설정
-    video_filename = "video2.mp4" 
-    output_folder = os.path.join("data", "output")
+    # 경로 및 파일 설정
+    base_dir = "data"
+    input_dir = os.path.join(base_dir, "input")
+    output_dir = os.path.join(base_dir, "output")
+    split_dir = os.path.join(output_dir, "split_files")
     
-    # 결과물 폴더 분리 (깔끔하게)
-    split_output_folder = os.path.join(output_folder, "split_files")
+    target_filename = "video4.wav"  # input 폴더에 있는 wav 파일명
+    input_path = os.path.join(input_dir, target_filename)
 
-    # 변환 (mp4 -> wav)
-    #print("Converting video to audio...")
-    #audio_path = convert.convert(video_filename)
-    
-    audio_path = "data/input/example.wav"
-
-    # 로드
+    # 오디오 파일 로드
     try:
-        y, sr = file.load(audio_path)
+        y, sr = file.load(input_path)
     except Exception as e:
-        print(f"Error loading file: {e}")
+        print(f"Error: 파일을 불러올 수 없습니다. 경로를 확인하세요.\n{e}")
         return
 
-    # 처리 (공백 제거 및 분할)
+    # 파형 시각화 및 이미지 저장
+    wav_graph = process.show_wav(y, sr)
+    wav_graph.savefig(os.path.join(output_dir, "waveform.png"))
+    print("hi")
+    wav_graph.close() # 메모리 해제
+
+    # 무음 제거 및 구간 분할
     segments = process.wav_del_space(y, sr)
 
-    # 저장 단계
+    # 결과물 저장
     if segments:
-        # (A) 분할된 파일들 저장
-        file.save(split_output_folder, segments, sr)
-        print(f"Done. {len(segments)} split files saved.")
+        # 분할된 파일 개별 저장
+        file.save(split_dir, segments, sr)
 
-        # (B) [핵심] 공백 제거된 합본 만들기
-        print("Mering segments...")
-        merged_y = np.concatenate(segments) # 리스트에 있는 조각들을 일렬로 이어 붙임
-        
-        # 합본 파일 경로 설정
-        merged_filename = f"merged_no_silence.wav"
-        merged_path = os.path.join(output_folder, merged_filename)
-        
-        # 저장
+        # 공백 제거된 합본 생성 및 저장
+        merged_y = np.concatenate(segments)
+        merged_path = os.path.join(output_dir, "merged_no_silence.wav")
         file.save_merged(merged_path, merged_y, sr)
-
+        
+        print(f"{len(segments)}개 저장.")
     else:
-        print("Warning: 저장할 오디오 구간이 없습니다.")
+        print("Error.. 저장실패")
 
 if __name__ == "__main__":
     main()
