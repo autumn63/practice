@@ -4,15 +4,15 @@ import file, process, convert
 
 def main():
     # 경로 설정
-    base_dir = "data"
+    base_dir = "audio/data"
     output_dir = os.path.join(base_dir, "output")
     split_dir = os.path.join(output_dir, "split_files")
     
-    # 처리할 비디오 파일명 (data/input 폴더 안에 있어야 함)
+    # 처리할 비디오 파일명 (audio/data/input 폴더 안에 있어야 함)
     target_video = "video4.mp4" 
 
     # 1. 변환 (MP4 -> WAV)
-    audio_path = convert.convert(target_video)
+    audio_path = convert.convert(base_dir, target_video)
     
     if not audio_path:
         return # 변환 실패 시 종료

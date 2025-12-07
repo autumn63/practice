@@ -1,4 +1,4 @@
 soundfile
 matplotlib.pyplot
-ibrosa, librosa.display
+librosa, librosa.display
 moviepy

@@ -1,9 +1,8 @@
 import os
 from moviepy import VideoFileClip
 
-def convert(filename):
+def convert(base_dir, filename):
     # 경로 설정
-    base_dir = "data"
     input_dir = os.path.join(base_dir, "input")
     output_dir = os.path.join(base_dir, "output")
     
