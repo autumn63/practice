@@ -8,7 +8,7 @@ import os
 
 # --- 사용자 설정 영역 ---
 INPUT_DIR = 'standardized_frames_16x9'      # 프레임 폴더명 (video_process.py에서 생성됨)
-OUTPUT_VIDEO_NAME = 'final_output.mp4' # ⭐ 출력 파일을 .mp4로 변경 ⭐
+OUTPUT_VIDEO_NAME = '/Users/heoyeonbeom/Documents/GitHub/practice/video/data_video/final_output.mp4' # ⭐ 출력 파일을 .mp4로 변경 ⭐
 TARGET_FPS = 15.0                            
 # -------------------------
 
