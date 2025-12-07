@@ -15,7 +15,7 @@ mp_drawing = mp.solutions.drawing_utils
 
 #---- 1. 동영상 파일 열기 -----
 cap = cv2.VideoCapture(
-    "/Users/heoyeonbeom/Documents/GitHub/practice/video/data_video/final_output.mp4"
+    "C:/Users/hyens/Documents/GitHub/practice/video_yeonbeom/final_output.mp4"
 )
 
 success, frame = cap.read()
