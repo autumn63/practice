@@ -8,14 +8,9 @@ import mediapipe as mp
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
-#"C:/Users/hyens/Documents/GitHub/practice/video_yeonbeom/video.mp4"
-# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/41초.mp4"
-# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/34초.mp4"
-#"C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/49초.mp4"
-
 #---- 1. 동영상 파일 열기 -----
 cap = cv2.VideoCapture(
-    "C:/Users/hyens/Documents/GitHub/practice/video_yeonbeom/final_output.mp4"
+    "video/data_video/final_output.mp4"
 )
 
 success, frame = cap.read()
@@ -43,7 +38,7 @@ out = cv2.VideoWriter("/Users/heoyeonbeom/Documents/GitHub/practice/video/data_v
      int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) #원본 해상도 유지
 )
 
-#---- 3. Mediapipe 얼굴 감지 및 블러 처리 -----
+#---- 3. Mediapipe 설정. -----
 
 with mp_face_detection.FaceDetection(
     model_selection=1,  # 0: 가까운 거리(2m 이내) , 1: 먼 거리(2m 이상)
