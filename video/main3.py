@@ -8,11 +8,6 @@ import mediapipe as mp
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
-#"C:/Users/hyens/Documents/GitHub/practice/video_yeonbeom/video.mp4"
-# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/41초.mp4"
-# C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/34초.mp4"
-#"C:/Users/hyens/Documents/GitHub/practice/video_hyenseok/49초.mp4"
-
 #---- 1. 동영상 파일 열기 -----
 cap = cv2.VideoCapture(
     "video/data_video/final_output.mp4"
