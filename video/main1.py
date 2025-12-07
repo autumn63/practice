@@ -4,7 +4,7 @@
 
 # 필요한 라이브러리 설치
 # pip install opencv-python numpy
-
+# cd data_video
 import cv2
 import numpy as np
 import os
@@ -12,7 +12,7 @@ import glob
 import math # math.gcd 함수를 사용하여 비율을 계산할 때 사용 가능 (선택 사항)
 
 # --- 사용자 설정 영역 ---
-INPUT_VIDEO_PATH = 'video.mp4'         # 처리할 원본 동영상 파일 경로
+INPUT_VIDEO_PATH = '/Users/heoyeonbeom/Documents/GitHub/practice/video/data_video/video.mp4'         # 처리할 원본 동영상 파일 경로
 PROCESSED_DIR = 'standardized_frames_16x9'    # 표준화된 프레임을 저장할 디렉토리명
 TARGET_ASPECT_RATIO = (16, 9)                   # 목표 비율
 TARGET_SIZE = (320, 180)                        # 16:9 비율을 유지하는 크기 (320 / 16 = 20, 180 / 9 = 20)
