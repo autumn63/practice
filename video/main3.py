@@ -43,7 +43,7 @@ out = cv2.VideoWriter("/Users/heoyeonbeom/Documents/GitHub/practice/video/data_v
      int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) #원본 해상도 유지
 )
 
-#---- 3. Mediapipe 얼굴 감지 및 블러 처리 -----
+#---- 3. Mediapipe 설정. -----
 
 with mp_face_detection.FaceDetection(
     model_selection=1,  # 0: 가까운 거리(2m 이내) , 1: 먼 거리(2m 이상)
