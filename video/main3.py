@@ -31,7 +31,7 @@ cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  #처음 프레임으로 되돌리기
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 
 #동영상 파일 생성. 폴더 위치 설정.
-out = cv2.VideoWriter("/Users/heoyeonbeom/Documents/GitHub/practice/video/data_video/output_blur.mp4",
+out = cv2.VideoWriter("data_video/output_blur.mp4",
     fourcc,
     cap.get(cv2.CAP_PROP_FPS), #원본 FPS 유지
     (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), #원본 해상도 유지
