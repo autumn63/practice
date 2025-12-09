@@ -1,14 +1,11 @@
 Overview
 ========
 
-This documentation provides an overview of the practice project, which consists of
-multiple branches designed to handle different data modalities:
+이 문서는 ``autumn63/practice-sample`` 저장소의 전체 구조와 목적을 설명합니다.
 
-- Text processing
-- Image processing
-- Audio processing
-- Video processing
+- text 브랜치: 욕설필터
+- imag 브랜치: 이미지 처리
+- audio 브랜치: 오디오 공백 전처리
+- video 브랜치: 비디오 전처리 후 얼굴 인식, 블러처리
 
-Each branch contains modularized code that performs preprocessing, transformation,
-or filtering operations.  
-This documentation helps users understand the structure, purpose, and usage of each branch.
+각 브랜치의 자세한 내용은 :doc:`branches` 문서를 참고하세요.
